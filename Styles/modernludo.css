@@ -1,0 +1,216 @@
+﻿body {
+    padding: 0;
+    margin: 0 auto;
+    overflow-y: hidden;
+    background-color: #0D0D0D;
+}
+
+div {
+    transition: all 1s;
+    -webkit-transition: all 1s;
+}
+
+    div#copyright {
+        height: 20px;
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        width: 400px;
+        top: 620px;
+        left: 25px;
+        margin: 0px;
+        font-family: Verdana;
+        font-size: small;
+        color: lightgray;
+        z-index: 3;
+    }
+
+        div#copyright:hover {
+            color: grey;
+        }
+
+.coverhide {
+    animation: changecover 10s forwards;
+    -webkit-animation: changecover 10s forwards;
+    position: relative;
+}
+
+@keyframes changecover {
+    0% {
+        top: 0px;
+    }
+
+    50% {
+        top: 300px;
+    }
+
+    100% {
+        top: 700px;
+        display: none;
+    }
+}
+
+@-webkit-keyframes changecover {
+    0% {
+        top: 0px;
+    }
+
+    50% {
+        top: 300px;
+    }
+
+    100% {
+        top: 700px;
+        display: none;
+    }
+}
+
+.coveronmobile {
+    position: initial;
+    padding-top: 100px;
+    width: 680px;
+    height: 600px;
+    margin: 0 auto;
+}
+
+    .coveronmobile > div {
+        width: 140px;
+        height: 140px;
+        margin: 60px 15px;
+        border-radius: 25px;
+        float: left;
+    }
+
+        .coveronmobile > div > div {
+            width: 140px;
+            height: 140px;
+            box-sizing: border-box;
+            border-radius: 25px;
+            z-index: 1;
+            text-align: center;
+        }
+
+            .coveronmobile > div > div > input {
+                text-align: center;
+                border: none;
+                position: relative;
+                height: 50px;
+                width: 100px;
+                background-color: rgba(255, 255, 255, 0.5);
+                font-weight: 900;
+                font-size: 25px;
+                top: 30px;
+            }
+
+.cover {
+    position: initial;
+    width: 680px;
+    height: 600px;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 auto;
+}
+
+    .cover > div {
+        width: 290px;
+        height: 250px;
+        margin: 20px;
+        border-radius: 25px;
+    }
+
+        .cover > div.scale:hover {
+            width: 290px;
+            height: 250px;
+            margin: 20px;
+            transform: scale(1.1);
+            -webkit-transform: scale(1.1);
+            border-radius: 0px;
+        }
+
+        .cover > div > input:hover {
+            text-align: center;
+            border: none;
+            background-color: rgba(200, 190, 235, 0.5);
+            font-weight: 200;
+        }
+
+        .cover > div > div {
+            width: 290px;
+            height: 250px;
+            box-sizing: border-box;
+            border-radius: 25px;
+            z-index: 1;
+            text-align: center;
+        }
+
+            .cover > div > div > input {
+                text-align: center;
+                border: none;
+                position: relative;
+                height: 50px;
+                width: 180px;
+                background-color: rgba(255, 255, 255, 0.5);
+                font-weight: 900;
+                font-size: 40px;
+                top: 100px;
+            }
+
+            .cover > div > div:hover {
+                border-radius: 0px;
+            }
+
+div#main {
+    background-color: khaki;
+    margin: 0 auto;
+    padding: 0;
+}
+
+#gameboard {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    box-sizing: padding-box;
+}
+
+#playboard {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    box-sizing: padding-box;
+    z-index: 1;
+}
+
+#dice {
+    position: absolute;
+    left: 50px;
+    top: 50px;
+    margin: 0;
+    padding: 0;
+    box-sizing: padding-box;
+    z-index: 1;
+}
+
+#buttondiv {
+    position: absolute;
+}
+
+#playerStatus {
+    width: 180px;
+    height: 200px;
+    position: absolute;
+}
+
+#players {
+    margin: 0;
+    padding: 0;
+}
+
+#backtomenu {
+    position: absolute;
+    color: gold;
+    left: 5px;
+    top: 15px;
+    font-weight: 900;
+    z-index: 3;
+    cursor: pointer;
+}
