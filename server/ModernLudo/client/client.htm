@@ -1,0 +1,152 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+    <head>
+        <title>Test</title>
+        <script>
+            var noSupportMessage = "Your browser cannot support WebSocket!";
+            var ws;
+
+            function inputPlayerName() {
+                var name = prompt("What is your name", "");
+                if (name === "")
+                    return inputPlayerName()
+                else
+                    return name;
+            }
+
+            function appendMessage(message) {
+                var div = document.createElement('div');
+                div.textContent = message;
+                body.appendChild(div);
+            }
+
+            function connectSocketServer() {
+                var support = "MozWebSocket" in window ? 'MozWebSocket' : ("WebSocket" in window ? 'WebSocket' : null);
+
+                if (support == null) {
+                    appendMessage("* " + noSupportMessage);
+                    return;
+                }
+
+                appendMessage("Connecting to server ..");
+                // create a new websocket and connect
+                ws = new window[support]('ws://localhost:2012/');
+                //ws = new window[support]('ws://192.168.8.84:2012/');
+
+                // when data is comming from the server, this metod is called
+                ws.onmessage = function (evt) {
+                    var data = evt.data;
+                    if (!data)
+                        return;
+     
+                    var json = JSON.parse(data);
+                    var jValue;
+                    var isBreak = true;
+                    for (jProperty in json) {
+                        jValue = json[jProperty];
+                        switch (jProperty) {
+                            case "game":
+                                if (jValue === "start") {
+                                    
+                                }
+                                else if (jValue === "join") {
+                                    name = inputPlayerName();
+                                    var msg = JSON.stringify({"player":name});
+                                    sendJSONMessage(msg);
+                                }
+                                playButton.disabled = false;
+                                break;
+                            case "room":
+                                if (jValue === "full") {
+                                    playButton.disabled = true;
+                                }
+                                break;
+                            case "players":
+                                players = jValue;
+                                break;
+                            case "player":
+                                break;
+                            case "move":
+                                break;
+                            case "play":
+                                isBreak = false;
+                                break;
+                        }
+                        alert(jValue);
+                        if (isBreak)
+                            break;
+                    }
+                };
+
+                // when the connection is established, this method is called
+                ws.onopen = function () {
+                    appendMessage('* Connection open');
+                    connectButton.disabled = true;
+                    disconnectButton.disabled = false;
+                };
+
+                // when the connection is closed, this method is called
+                ws.onclose = function () {
+                    appendMessage('* Connection closed');
+                    playButton.disabled = true;
+                    connectButton.disabled = false;
+                    disconnectButton.disabled = true;
+                }
+            }
+
+            function sendMessage() {
+                if (ws) {
+                    var msg = {};
+                    msg.play = this.name;
+                    msg.move = 6;
+                    ws.send(JSON.stringify(msg));
+                }
+            }
+
+            function JSONEncode(key, value) {
+                var json = { key: value };
+                var json_string = JSON.stringify(json)
+                return json_string;
+            }
+
+            function sendJSONMessage(msg) {
+                if (ws) {
+                    ws.send(msg);
+                }
+            }
+
+            function disconnectWebSocket() {
+                if (ws) {
+                    ws.close();
+                }
+            }
+
+            function connectWebSocket() {
+                connectSocketServer();
+            }
+
+            window.onload = function () {
+                playButton.disabled = true;
+                disconnectButton.disabled = true;
+            }
+    
+    </script>
+    </head>
+    <body id="body">
+        <input type="button" id="connectButton" value="Connect" onclick="connectWebSocket()"/> 
+        <input type="button" id="disconnectButton" value="Disconnect" onclick="disconnectWebSocket()"/> 
+        <input type="text" id="text" />
+        <input type="button" id="playButton" value="play" onclick="sendMessage()"/> <br />
+
+        <script>
+            var connectButton = document.getElementById('connectButton');
+            var disconnectButton = document.getElementById('disconnectButton');
+            var text = document.getElementById('text');
+            var playButton = document.getElementById('playButton');
+            var body = document.getElementById('body');
+            connectButton.disabled = false;
+            var name = "";
+            var players = [];
+        </script>
+    </body>
+</html>
