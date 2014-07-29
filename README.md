@@ -10,7 +10,7 @@ This Modern Ludo game is based on the Canvas element in HTML5 and JavaScript.
 Version
 ----
 
-1.0
+2.0
 
 Game Rules
 -----------
