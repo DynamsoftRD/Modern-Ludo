@@ -36,33 +36,44 @@
         <div style="width:100%; margin:0;padding:0; height:40px; text-align:center;color:Highlight"><h1>Modern Ludo</h1></div>
         <div style="background-color:coral;" class="scale">
             <div title="Player 1" style="background: url(Images/redplane.png) no-repeat center; background-size: 250px 250px; ">
-                <input type="text" class="playername" id="playeronename" style="color: grey" value="Tom" />
+                <input type="text" class="playername" id="playeronename" style="color: grey" value="" disabled="disabled" />
             </div>
         </div>
         <div style="background-color:lightblue;" class="scale">
             <div title="Player 2" style="background: url(Images/yellowplane.png) no-repeat center; background-size: 250px 250px; ">
-                <input type="text" class="playername" id="playertwoname" style="color: coral" value="Sivelin" />
+                <input type="text" class="playername" id="playertwoname" style="color: coral" value="" disabled="disabled" />
             </div>
         </div>
         <div style="background-color:pink;" class="scale">
             <div title="Player 3" style="background: url(Images/blueplane.png) no-repeat center; background-size: 250px 250px; ">
-                <input type="text" class="playername" id="playerthreename" style="color: coral" value="Elina" />
+                <input type="text" class="playername" id="playerthreename" style="color: coral" value="" disabled="disabled" />
             </div>
         </div>
         <div style="background-color:khaki;" class="scale">
             <div title="Player 4" style="background: url(Images/greenplane.png) no-repeat center; background-size: 250px 250px; ">
-                <input type="text" class="playername" id="playerfourname" style="color: grey" value="Michael" />
+                <input type="text" class="playername" id="playerfourname" style="color: grey" value="" disabled="disabled" />
             </div>
         </div>
         <div style="height:20px;width:100%; padding:0;margin:0" id="buttons">
-            <input type="button" id="gameon" value="Let's Play!" style="height: 20px; width: 40%; margin: 0; padding: 0;margin-right: 3%;" onclick="startTheGame(this);" />
-            <input type="button" value="Save Game" style="height: 20px; width: 25%; margin: 0; padding: 0; margin-right: 3%;" onclick="saveGame(this);" />
-            <input type="button" value="Load Game" style="height: 20px; width: 25%; margin: 0; padding: 0" onclick="loadGame(this);" />
+            <input type="button" id="gameon" value="Waiting~~~" style="height: 20px; width: 40%; margin: 0; padding: 0;margin-right: 3%; display:none;" disabled="disabled" onclick="startTheGame(this);" />
+            <input type="button" id="savegame" value="Save Game" style="height: 20px; width: 25%; margin: 0; padding: 0; margin-right: 3%; display: none;" onclick="saveGame(this);" />
+            <input type="button" id="loadgame" value="Load Game" style="height: 20px; width: 25%; margin: 0; padding: 0; display: none;" onclick="loadGame(this);" />
         </div>
         <canvas id="loading" style="height:20px; width: 680px; display:none; margin:0; padding:0"></canvas>
         <div id="copyright" class="scale">Copyright &copy; 2014 - 2015 Tom Kent's Shop</div>
     </div>
+
+    <div id="startScreen" class="cover" style="display:none;">
+        <div style="background-color: lightblue; width:100%;">
+            <div title="Player Join" style="width:100%;"><br />
+                <span id="roomfull" style="display: none; font-weight: 900; font-size: 25px;">Sorry, the room is Full.</span>
+                <input type="text" id="joinGame" style="color: grey; position: relative; top:60px;left:25px; width:90%;" value="" disabled="disabled" />
+                <img id="joinbtnimg" style="position: relative; top: 130px; left:-560px; width: 50px; height: 50px;" src="Images/redplane.png" alt="plane" onclick="joinGameNow(this);" />
+            </div>
+        </div>
+    </div>
     <div id="backtomenu" style="display:none;"><a onclick="showMenu();">Menu<<<</a></div>
     <script type="text/javascript" src="Scripts/modernludo.js"></script>
+    <script type="text/javascript" src="Scripts/network.js"></script>
 </body>
 </html>

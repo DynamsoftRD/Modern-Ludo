@@ -24,6 +24,7 @@ namespace ModernLudo
         //private WebSocketSession[] sessions = new WebSocketSession[MAX_PLAYER];
         private Player[] players = new Player[MAX_PLAYER];
         private bool isFull;
+        private bool sessionFull = false;
 
         public Form1()
         {
@@ -55,29 +56,24 @@ namespace ModernLudo
 
         private void appServer_NewSessionConnected(WebSocketSession session)
         {
-            if (this.isFull)
-            {
-                session.Send(JSONEncode("room", "full"));
-                return;
-            }
-
             int len = this.players.Length;
 
             Player player = new Player(session, null);
-            for (int i = 0; i < len; ++i)
+            int i = 0;
+            for (i = 0; i < len; ++i)
             {
                 if (players[i] == null)
                 {
                     player.SeatNum = i;
                     players[i] = player;
                     session.Send(JSONEncode("game", "join"));
-                    if (i == (MAX_PLAYER - 1))
-                    {
-                        this.isFull = true;
-                        //Game_Start();
-                    }
                     break;
                 }
+            }
+            if (i == len)
+            { // 4 people playing
+                session.Send(JSONEncode("room", "full"));
+                this.sessionFull = true;
             }
         }
 
@@ -87,10 +83,6 @@ namespace ModernLudo
             {
                 Dictionary<string, string> obj = JsonConvert.DeserializeObject<Dictionary<string, string>>(message);
                 String name = obj["player"];
-
-                // collect player names
-                int len = players.Length;
-
                 // add player name
                 foreach (Player player in players)
                 {
@@ -100,29 +92,49 @@ namespace ModernLudo
                         break;
                     }
                 }
-
                 // show players
                 {
                     Player player = null;
-                    for (int i = 0; i < MAX_PLAYER; ++i)
+                    int i;
+                    for (i = 0; i < MAX_PLAYER; i++)
                     {
                         player = players[i];
                         if (player != null)
-                            player.LoadPlayers(players);
+                            if (player.Name != null)
+                                player.SendPlayers(players);
+                            else
+                            {
+                                break;
+                            }
+                        else
+                        {
+                            break;
+                        }
                     }
-       
-                }
-
-                // if full, start game
-                if (this.isFull)
-                {
-                    Game_Start();
+                    if (i == MAX_PLAYER)
+                    {
+                        this.isFull = true;
+                        Game_Start();
+                    }
                 }
             }
             else
             {
-                UpdateAllStatus(session, message);
-                NotifyNext(session);
+                if (message.Contains("diceValue"))
+                {
+
+                    Dictionary<string, string> obj = JsonConvert.DeserializeObject<Dictionary<string, string>>(message);
+                    String name = obj["diceValue"];
+                    UpdateAllStatus(session, message);
+                }
+                else if (message.Contains("planeclicked"))//the player moved a plane
+                {
+                    UpdateAllStatus(session, message);
+                }
+                else if (message.Contains("NotifyNext"))
+                {
+                    NotifyNext(session);
+                }
             }
         }
 
@@ -175,11 +187,13 @@ namespace ModernLudo
                 {
                     if ((i + 1) == MAX_PLAYER)
                     {
-                        players[0].Session.Send(JSONEncode("game", "move"));
+                        string msg = JSONEncode("game", "move$" + players[0].Name);
+                        players[0].Session.Send(msg);
                     }
                     else
                     {
-                        players[i + 1].Session.Send(JSONEncode("game", "move"));
+                        string msg = JSONEncode("game", "move$" + players[i + 1].Name);
+                        players[i + 1].Session.Send(msg);
                     }
                 }
             }
@@ -224,12 +238,10 @@ namespace ModernLudo
 
         private void Game_Start()
         {
-            // init players
-
-
-            // start game
             String msg = JSONEncode("game", "start");
             SendMsgToAllSessions(msg);
+            msg = JSONEncode("game", "move$" + players[0].Name);
+            players[0].Session.Send(msg);
         }
 
         public static String JSONEncode(String key, String value)
@@ -257,23 +269,15 @@ namespace ModernLudo
     public class Player
     {
         public WebSocketSession Session { get; set; }
-        public string Name {get; set;}
+        public string Name { get; set; }
         public ArrayList Players = new ArrayList();
         public int SeatNum { get; set; }
-
         public Player(WebSocketSession session, string name)
         {
             this.Session = session;
             this.Name = name;
         }
-
-        public void ShowPlayers()
-        {
-            string msg = JSONEncode("players", Players);
-            Session.Send(msg);
-        }
-
-        public static String JSONEncode(String key, ArrayList values)
+        public void SendPlayers(Player[] players)
         {
             StringBuilder sb = new StringBuilder();
             StringWriter sw = new StringWriter(sb);
@@ -281,44 +285,20 @@ namespace ModernLudo
             {
                 writer.Formatting = Formatting.Indented;
                 writer.WriteStartObject();
-                writer.WritePropertyName(key);
+                writer.WritePropertyName("players");
                 writer.WriteStartArray();
-                foreach (Player value in values)
+                foreach (Player player in players)
                 {
-                    writer.WriteValue(value.Name);
+                    if (player != null)
+                        if (player.Name != null)
+                        {
+                            writer.WriteValue(player.SeatNum + "$" + player.Name);
+                        }
                 }
                 writer.WriteEndArray();
                 writer.WriteEndObject();
             }
-
-            return sw.ToString();
-        }
-
-        public void LoadPlayers(Player[] players)
-        {
-            Players.Clear();
-
-            int totalPlayers = players.Length;
-            int len = totalPlayers - 1;
-            int i = SeatNum;
-            bool isDirty = false;
-            do
-            {
-                i += 1;
-                if (i == totalPlayers)
-                    i = 0;
-
-                if (players[i] != null)
-                {
-                    Players.Add(players[i]);
-                    isDirty = true;
-                } 
-
-                len -= 1;
-            } while (len != 0);
-
-            if (isDirty)
-                ShowPlayers();
+            Session.Send(sw.ToString());
         }
     }
 }

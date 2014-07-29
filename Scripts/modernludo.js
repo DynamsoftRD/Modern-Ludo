@@ -10,9 +10,12 @@ var routs = [];
 var specialPos = [];
 var flyOverPos = [72, 82, 92, 62];
 var roles = ["red", "yellow", "blue", "green"];
+var selfName = "";
 var hands = ["#FF0000", "#FFCC00", "#9696FF", "#33B433"];
 var toHit = [[], []];
 var clickOverflow = false;
+var notMe = false;
+var freezeMap = true;
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
     if (h < 2 * r) r = h / 2;
@@ -34,29 +37,37 @@ function init() {
         onmobile = true;
         document.getElementById("buttondiv").style.display = "none";
         document.getElementById("cover").className = "coveronmobile";
-        document.getElementById("cover").style.display = "";
+        document.getElementById("startScreen").style.display = "";
     }
     else {
         onmobile = false;
-        document.getElementById("cover").style.display = "";
+        document.getElementById("startScreen").style.display = "";
     }
+    JoinGame();
 }
 function startTheGame(btn) {
     if (!continueplay) {
         var names = document.getElementsByClassName("playername");
         for (var i = 0; i < names.length; i++) {
-            if (names[i].value == "") {
-                btn.value = "Need Names~";
-                names[i].focus();
-                setTimeout(function () {
-                    btn.value = "Let's start~";
-                }, 2000);
-                return;
-            }
-            else {
-                playStatus[i].name = names[i].value;
+            //    if (names[i].value == "") {
+            //        btn.value = "Need Names~";
+            //        names[i].focus();
+            //        setTimeout(function () {
+            //            btn.value = "Let's start~";
+            //        }, 2000);
+            //        return;
+            //    }
+            //    else {
+            playStatus[i].name = names[i].value;
+            if (playStatus[i].name == selfName) {
+                playStatus[i].self = true;
             }
         }
+        document.getElementById("gameon").style.display = "";
+        document.getElementById("loadgame").style.display = "";
+        document.getElementById("savegame").style.display = "";
+        //    }
+        //}
         document.getElementById("buttons").style.display = "none";
         document.getElementById("loading").style.display = "";
         coverCanvas = document.getElementById("loading");
@@ -140,10 +151,22 @@ function initPlayGround() {
     updateAllPlanes();
 }
 function changeHands() {
+    document.getElementById("rollDice").style.visibility = "none";
     if (playhand.role) {
         if (playhand.role.continuePlaying) {
-            document.getElementById("rollDice").style.visibility = "";
+            if (playhand.role.self)
+                document.getElementById("rollDice").style.visibility = "";
             handcount--;
+        }
+        else {
+            if (!notMe) {
+                document.getElementById("rollDice").style.visibility = "none";
+                var msg = JSON.stringify({ "NotifyNext": handcount });
+                sendJSONMessage(msg);
+            }
+            else {
+                notMe = false;
+            }
         }
     }
     playhand.color = hands[handcount % 4];
@@ -164,7 +187,6 @@ function changeHands() {
         else {
             dicectx.fillRect(0, tileWidth * 4, tileWidth * 4, tileWidth * 2);
             dicectx.clearRect(0, 0, tileWidth * 4, tileWidth * 4);
-            document.getElementById("rollDice").style.visibility = "";
         }
         diceValue = 0;
     }, 500);
@@ -313,13 +335,30 @@ function placeAPlane(color, value, steps, previousValue, currentPlane) {
             if (steps > 12 && playhand.role.fly) {//fly  
                 playhand.role.fly = false;
                 var tempValue = null;
-                for (var j = 0; j < steps - 12; j++) {
-                    stepsToTake.push(previousValue + j + 1);
+                var j = 0;
+                if (steps > 16) {
+                    for (j = 0; j < steps - 16; j++) {
+                        stepsToTake.push(previousValue + j + 1);
+                    }
+                    tempValue = routs[playhand.role.index][previousValue + j - 1];
+                    toHit[0].push(j);
+                    toHit[1].push(tempValue);
+                    stepsToTake.push(value - 12);
+                    tempValue = routs[playhand.role.index][value - 13];//hit working
+                    toHit[0].push(j + 1);
+                    toHit[1].push(tempValue);
+                    steps = steps - 16 + 3;
+                    j = j + 1;
                 }
-                tempValue = routs[playhand.role.index][previousValue + j - 1];//hit working
-                toHit[0].push(j);
-                toHit[1].push(tempValue);
-                steps = steps - 12 + 2;
+                else {
+                    for (j = 0; j < steps - 12; j++) {
+                        stepsToTake.push(previousValue + j + 1);
+                    }
+                    tempValue = routs[playhand.role.index][previousValue + j - 1];//hit working
+                    toHit[0].push(j);
+                    toHit[1].push(tempValue);
+                    steps = steps - 12 + 2;
+                }
                 stepsToTake.push(57);
                 tempValue = flyOverPos[playhand.role.index];//hit working
                 toHit[0].push(j + 1);
@@ -461,55 +500,82 @@ function placeDefaultPlanes(color, planeindex, atTheDoor) {
         }
     }
 }
-function rolltheDice(btn) {
+function returnDiceImg(val) {
+    var currentdice = "dice" + "one";
+    switch (val) {
+        case 1: currentdice = "dice" + "one"; break;
+        case 2: currentdice = "dice" + "two"; break;
+        case 3: currentdice = "dice" + "three"; break;
+        case 4: currentdice = "dice" + "four"; break;
+        case 5: currentdice = "dice" + "five"; break;
+        case 6: currentdice = "dice" + "six"; break;
+        default: break;
+    }
+    var img = document.getElementById(currentdice);
+    return img;
+}
+
+function rolltheDice(btn, dvalue) {//updated for network playing
     if (onmobile)
         dicectx.clearRect(0, 0, tileWidth * 2, tileWidth * 2);
     else {
-        btn.style.visibility = "hidden";
+        if (btn)
+            btn.style.visibility = "hidden";
         dicectx.clearRect(0, 0, tileWidth * 4, tileWidth * 4);
     }
     document.getElementById("info").innerText = "";
-    var diceposi = [0, 1, 1, 0];
-    var diceposj = [0, 0, 1, 1];
-    var i = -1;
-    var rolling = setInterval(function () {
-        if (onmobile)
-            dicectx.clearRect(0, 0, tileWidth * 2, tileWidth * 2);
-        else
-            dicectx.clearRect(tileWidth * 2 * (diceposi[i % 4]), tileWidth * 2 * (diceposj[i % 4]), tileWidth * 2, tileWidth * 2);
-        diceValue = Math.floor((Math.random() * 6) + 1);
-        var currentdice = "dice" + "one";
-        switch (diceValue) {
-            case 1: currentdice = "dice" + "one"; break;
-            case 2: currentdice = "dice" + "two"; break;
-            case 3: currentdice = "dice" + "three"; break;
-            case 4: currentdice = "dice" + "four"; break;
-            case 5: currentdice = "dice" + "five"; break;
-            case 6: currentdice = "dice" + "six"; break;
-            default: break;
-        }
-        var img = document.getElementById(currentdice);
-        i++;
-        if (onmobile)
-            dicectx.drawImage(img, 0, 0, tileWidth * 2, tileWidth * 2);
-        else
-            dicectx.drawImage(img, tileWidth * 2 * (diceposi[i % 4]), tileWidth * 2 * (diceposj[i % 4]), tileWidth * 2, tileWidth * 2);
-    }, 180);
-    setTimeout(function () {
-        clearInterval(rolling);
-        updatePlanesStatus(diceValue);
+    if (dvalue != undefined) {
+        notMe = true;
+        var img = returnDiceImg(dvalue);
+        dicectx.drawImage(img, 0, 0, tileWidth * 2, tileWidth * 2);
+        updatePlanesStatus(dvalue);
         if (playhand.role) {
             var ifChangeHands = -1;
             for (var i = 0; i < playhand.role.planes.length; i++) {
                 if (ifChangeHands < playhand.role.planes[i].value && playhand.role.planes[i].value != 56)
                     ifChangeHands = playhand.role.planes[i].value;
             }
-            if (diceValue != 6 && ifChangeHands == -1) {//All planes are in the airport and there is no chance of taking off
+            if (dvalue != 6 && ifChangeHands == -1) {//All planes are in the airport and there is no chance of taking off
                 handcount++;
                 changeHands();
             }
         }
-    }, 2000);
+    }
+    else {
+        var diceposi = [0, 1, 1, 0];
+        var diceposj = [0, 0, 1, 1];
+        var i = -1;
+        var rolling = setInterval(function () {
+            if (onmobile)
+                dicectx.clearRect(0, 0, tileWidth * 2, tileWidth * 2);
+            else
+                dicectx.clearRect(tileWidth * 2 * (diceposi[i % 4]), tileWidth * 2 * (diceposj[i % 4]), tileWidth * 2, tileWidth * 2);
+            diceValue = rand(6);
+            var img = returnDiceImg(diceValue);
+            i++;
+            if (onmobile)
+                dicectx.drawImage(img, 0, 0, tileWidth * 2, tileWidth * 2);
+            else
+                dicectx.drawImage(img, tileWidth * 2 * (diceposi[i % 4]), tileWidth * 2 * (diceposj[i % 4]), tileWidth * 2, tileWidth * 2);
+        }, 180);
+        setTimeout(function () {
+            clearInterval(rolling);
+            var msg = JSON.stringify({ "diceValue": diceValue });
+            sendJSONMessage(msg);
+            updatePlanesStatus(diceValue);
+            if (playhand.role) {
+                var ifChangeHands = -1;
+                for (var i = 0; i < playhand.role.planes.length; i++) {
+                    if (ifChangeHands < playhand.role.planes[i].value && playhand.role.planes[i].value != 56)
+                        ifChangeHands = playhand.role.planes[i].value;
+                }
+                if (diceValue != 6 && ifChangeHands == -1) {//All planes are in the airport and there is no chance of taking off
+                    handcount++;
+                    changeHands();
+                }
+            }
+        }, 2000);
+    }
 }
 function updatePlanesStatus(val) {
     if (val == 6)
@@ -524,6 +590,7 @@ function updatePlanesStatus(val) {
         }
     }
 }
+/////////////////////////////////////////////////////////////////////////////////////
 function drawTheBoard() {
     refreshBoard();
     drawSkyGradient();
@@ -891,10 +958,12 @@ function drawArrow(direction, width) {
     }
     return imgData;
 }
+/////////////////////////////////////////////////////////////////////////////////////
 var playStatus = (function () {
     var s = [];
     for (var k = 0; k < roles.length; k++) {
         var role = {
+            self: false,
             name: null,
             color: roles[k],
             index: k,
@@ -926,6 +995,8 @@ var playStatus = (function () {
     return s;
 })();
 function updatePos(evt) {
+    if (freezeMap)
+        return;
     canvas_x = (parseInt(evt.pageX) - parseInt(upcanvas.offsetLeft));
     canvas_y = (parseInt(evt.pageY) - parseInt(upcanvas.offsetTop));
     var tempvar = null;
@@ -951,64 +1022,80 @@ function updatePos(evt) {
     }
 }
 function updateRouts(evt) {
+    var tempvar = null;
     canvas_x = (parseInt(evt.pageX) - parseInt(upcanvas.offsetLeft));
     canvas_y = (parseInt(evt.pageY) - parseInt(upcanvas.offsetTop));
-    var tempvar = null;
     if (playhand.role) {
-        for (var i = 0; i < playhand.role.planes.length; i++) {
-            if (playhand.role.planes[i].pos.left < canvas_x && canvas_x < playhand.role.planes[i].pos.right &&
-                    playhand.role.planes[i].pos.top < canvas_y && canvas_y < playhand.role.planes[i].pos.bottom) {
-                tempvar = i;
-                clickOverflow = false;
-                break;
-            }
-            else {
-                tempvar = null;
-                clickOverflow = true;
+        if (tempvar == null) {
+            for (var i = 0; i < playhand.role.planes.length; i++) {
+                if (playhand.role.planes[i].pos.left < canvas_x && canvas_x < playhand.role.planes[i].pos.right &&
+                        playhand.role.planes[i].pos.top < canvas_y && canvas_y < playhand.role.planes[i].pos.bottom) {
+                    tempvar = i;
+                    clickOverflow = false;
+                    break;
+                }
+                else {
+                    tempvar = null;
+                    clickOverflow = true;
+                }
             }
         }
         if (tempvar == null) {
             return; //Player didn't click on a plane
         }
         else {
-            if (playhand.role.planes[tempvar].value == 56)//clicking on one that has touched base. do nothing
-                return;
-            if (diceValue == 0) {
-                document.getElementById("info").innerText = "Please roll dice";
-                return;
+            aPlaneClicked(tempvar, true);
+        }
+    }
+}
+
+function aPlaneClicked(clickedindex, selfclick) {
+    var tempvar = clickedindex;
+    if (selfclick) {
+        var msg = JSON.stringify({ "planeclicked": tempvar });
+        sendJSONMessage(msg);
+    }
+    else {
+        notMe = true;
+    }
+    //////
+    if (playhand.role.planes[tempvar].value == 56)//clicking on one that has touched base. do nothing
+        return;
+    if (diceValue == 0) {
+        document.getElementById("info").innerText = "Please roll dice";
+        return;
+    }
+    if (diceValue != 6 && playhand.role.planes[tempvar].value == -1) {//There is a plane flying, but he choose to click on one in the airport
+        return;
+    }
+    playhand.role.planes[tempvar].previousValue = playhand.role.planes[tempvar].value;
+    switch (playhand.role.planes[tempvar].value) {
+        case -1: if (playhand.role.allowTakeOff) { playhand.role.allowTakeOff = false; playhand.role.planes[tempvar].value = -5 + playhand.value; } diceValue = 0; break;
+        default:
+            playhand.role.planes[tempvar].value += diceValue;
+            if (playhand.role.planes[tempvar].value > 55) {
+                playhand.role.overLimit = diceValue;
             }
-            if (diceValue != 6 && playhand.role.planes[tempvar].value == -1) {//There is a plane flying, but he choose to click on one in the airport
-                return;
-            }
-            playhand.role.planes[tempvar].previousValue = playhand.role.planes[tempvar].value;
-            switch (playhand.role.planes[tempvar].value) {
-                case -1: if (playhand.role.allowTakeOff) { playhand.role.allowTakeOff = false; playhand.role.planes[tempvar].value = -5 + playhand.value; } diceValue = 0; break;
-                default:
-                    playhand.role.planes[tempvar].value += diceValue;
-                    if (playhand.role.planes[tempvar].value > 55) {
-                        playhand.role.overLimit = diceValue;
-                    }
-                    if (playhand.role.planes[tempvar].value < 57 && playhand.role.planes[tempvar].value > 0) {
-                        var tempRoutValue = routs[playhand.role.index][playhand.role.planes[tempvar].value - 1];
-                        for (var j = 0; j < specialPos[playhand.role.index].length; j++) {
-                            if (specialPos[playhand.role.index][j] == tempRoutValue) {
-                                switch (j) {
-                                    case 4: playhand.role.planes[tempvar].value += 12; playhand.role.fly = true; break;
-                                    default: playhand.role.planes[tempvar].value += 4; playhand.role.fly = true; break;
-                                }
-                            }
+            if (playhand.role.planes[tempvar].value < 57 && playhand.role.planes[tempvar].value > 0) {
+                var tempRoutValue = routs[playhand.role.index][playhand.role.planes[tempvar].value - 1];
+                for (var j = 0; j < specialPos[playhand.role.index].length; j++) {
+                    if (specialPos[playhand.role.index][j] == tempRoutValue) {
+                        switch (j) {
+                            case 3: playhand.role.planes[tempvar].value += 16; playhand.role.fly = true; break;
+                            case 4: playhand.role.planes[tempvar].value += 12; playhand.role.fly = true; break;
+                            default: playhand.role.planes[tempvar].value += 4; playhand.role.fly = true; break;
                         }
                     }
-                    diceValue = 0; break;
+                }
             }
-        }
-        updatePlayBoard();
-        if (onmobile) {
-            dicectx.clearRect(0, 0, tileWidth * 2, tileWidth * 2);
-        }
-        else
-            dicectx.clearRect(0, 0, tileWidth * 4, tileWidth * 4);
+            diceValue = 0; break;
     }
+    updatePlayBoard();
+    if (onmobile) {
+        dicectx.clearRect(0, 0, tileWidth * 2, tileWidth * 2);
+    }
+    else
+        dicectx.clearRect(0, 0, tileWidth * 4, tileWidth * 4);
 }
 function saveGame(btn) {
     cookieDelete();
@@ -1096,3 +1183,23 @@ function showCookies() {
     }
     return outMsg;
 }
+
+
+///Random number generate
+rnd.today = new Date();
+
+rnd.seed = rnd.today.getTime();
+
+function rnd() {
+
+    rnd.seed = (rnd.seed * 9301 + 49297) % 233280;
+
+    return rnd.seed / (233280.0);
+
+};
+
+function rand(number) {
+
+    return Math.ceil(rnd() * number);
+
+};

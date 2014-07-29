@@ -1,0 +1,13 @@
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\ModernLudo.exe.config
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\ModernLudo.exe
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\ModernLudo.pdb
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\log4net.dll
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\Newtonsoft.Json.dll
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\SuperSocket.Common.dll
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\SuperSocket.SocketBase.dll
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\SuperSocket.SocketEngine.dll
+D:\GitHub\ModernLudo\server\ModernLudo\bin\Debug\SuperWebSocket.dll
+D:\GitHub\ModernLudo\server\ModernLudo\obj\Debug\ModernLudo.Properties.Resources.resources
+D:\GitHub\ModernLudo\server\ModernLudo\obj\Debug\ModernLudo.csproj.GenerateResource.Cache
+D:\GitHub\ModernLudo\server\ModernLudo\obj\Debug\ModernLudo.exe
+D:\GitHub\ModernLudo\server\ModernLudo\obj\Debug\ModernLudo.pdb
